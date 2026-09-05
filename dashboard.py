@@ -133,14 +133,19 @@ def render_overview() -> None:
         with container:
             filtered = multiselect_filter(filtered, column, label, f"overview_{column}")
 
-    st.caption(f"Showing {len(filtered):,} cell measurements")
+    summary_column, download_column = st.columns([4, 1])
+    with summary_column:
+        st.caption(f"Showing {len(filtered):,} cell measurements")
+    with download_column:
+        st.download_button(
+            "Download filtered data",
+            data=filtered.to_csv(index=False).encode("utf-8"),
+            file_name="filtered_relative_frequencies.csv",
+            mime="text/csv",
+            width="stretch",
+        )
+
     st.dataframe(filtered, width="stretch", hide_index=True)
-    st.download_button(
-        "Download filtered data",
-        data=filtered.to_csv(index=False).encode("utf-8"),
-        file_name="filtered_relative_frequencies.csv",
-        mime="text/csv",
-    )
 
 
 def render_treatment_response() -> None:
