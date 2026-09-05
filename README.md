@@ -6,15 +6,11 @@ This project loads clinical immune-cell counts into SQLite, calculates cell-popu
 
 ## Dashboard
 
-**Dashboard URL: deployment pending**
+**Live dashboard:** Coming soon
 
-The Streamlit dashboard includes:
+Run `make dashboard` to open the dashboard locally. The Data Overview tab lets you filter the relative-frequency table and download the results. Treatment Response compares responders and non-responders, shows the statistical analysis, and explains the method. Baseline Analysis contains the requested cohort counts and B-cell result.
 
-- a filterable relative-frequency table with CSV export;
-- responder and non-responder comparisons with statistical results;
-- the baseline cohort, grouped summaries, and final B-cell metric.
-
-After the repository is published, deploy `dashboard.py` and replace the pending URL above.
+The hosted link will be added here after deployment.
 
 ## Run the project
 
