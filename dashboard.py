@@ -118,8 +118,16 @@ def render_overview() -> None:
     ):
         column.metric(label, f"{counts[table]:,}")
 
-    st.subheader("Sample relative frequencies")
-    st.button("Reset filters", on_click=reset_overview_filters)
+    heading_column, reset_column = st.columns([5, 1], vertical_alignment="center")
+    with heading_column:
+        st.subheader("Sample relative frequencies")
+    with reset_column:
+        st.button(
+            "Reset filters",
+            on_click=reset_overview_filters,
+            width="stretch",
+        )
+
     filter_columns = st.columns(5)
     filtered = data
     filter_specs = [
@@ -133,18 +141,7 @@ def render_overview() -> None:
         with container:
             filtered = multiselect_filter(filtered, column, label, f"overview_{column}")
 
-    download_column, summary_column = st.columns([1, 4])
-    with download_column:
-        st.download_button(
-            "Download filtered data",
-            data=filtered.to_csv(index=False).encode("utf-8"),
-            file_name="filtered_relative_frequencies.csv",
-            mime="text/csv",
-            width="stretch",
-        )
-    with summary_column:
-        st.caption(f"Showing {len(filtered):,} cell measurements")
-
+    st.caption(f"Showing {len(filtered):,} cell measurements")
     st.dataframe(filtered, width="stretch", hide_index=True)
 
 
@@ -163,62 +160,56 @@ def render_treatment_response() -> None:
     left.metric("Responder subjects", f"{response_counts.get('yes', 0):,}")
     right.metric("Non-responder subjects", f"{response_counts.get('no', 0):,}")
 
-    population = st.selectbox(
-        "Immune-cell population",
-        options=list(POPULATION_LABELS),
-        format_func=POPULATION_LABELS.get,
-    )
-    plot_data = values[values["population"] == population]
-    figure, axis = plt.subplots(figsize=(7, 4.5))
-    sns.boxplot(
-        data=plot_data,
-        x="response",
-        y="mean_percentage",
-        order=["no", "yes"],
-        hue="response",
-        palette={"no": "#7A9EAF", "yes": "#D17A57"},
-        legend=False,
-        ax=axis,
-    )
-    axis.set_title(f"{POPULATION_LABELS[population]} relative frequency")
-    axis.set_xlabel("Response")
-    axis.set_ylabel("Subject-level mean relative frequency (%)")
-    axis.set_xticks([0, 1], labels=["Non-responder", "Responder"])
-    st.pyplot(figure)
-    plt.close(figure)
+    selector_column, plot_column = st.columns([1, 1.4], vertical_alignment="top")
+    with selector_column:
+        population = st.selectbox(
+            "Immune-cell population",
+            options=list(POPULATION_LABELS),
+            format_func=POPULATION_LABELS.get,
+        )
+        selected_result = results.loc[results["population"] == population].iloc[0]
+        responder_column, non_responder_column = st.columns(2)
+        responder_column.metric(
+            "Responder mean", f"{selected_result['responder_mean']:.2f}%"
+        )
+        non_responder_column.metric(
+            "Non-responder mean", f"{selected_result['non_responder_mean']:.2f}%"
+        )
+        difference_column, p_value_column = st.columns(2)
+        difference_column.metric(
+            "Mean difference", f"{selected_result['mean_difference']:+.2f} pp"
+        )
+        p_value_column.metric(
+            "Adjusted p-value", f"{selected_result['adjusted_p_value']:.4f}"
+        )
+        if selected_result["adjusted_p_value"] < 0.05:
+            st.success("Significant after FDR correction")
+        else:
+            st.info("Not significant after FDR correction")
+
+    with plot_column:
+        plot_data = values[values["population"] == population]
+        figure, axis = plt.subplots(figsize=(6.0, 3.2))
+        sns.boxplot(
+            data=plot_data,
+            x="response",
+            y="mean_percentage",
+            order=["no", "yes"],
+            hue="response",
+            palette={"no": "#7A9EAF", "yes": "#D17A57"},
+            legend=False,
+            ax=axis,
+        )
+        axis.set_title(f"{POPULATION_LABELS[population]} relative frequency")
+        axis.set_xlabel("Response")
+        axis.set_ylabel("Mean relative frequency (%)")
+        axis.set_xticks([0, 1], labels=["Non-responder", "Responder"])
+        figure.tight_layout()
+        st.pyplot(figure, width=750)
+        plt.close(figure)
 
     st.subheader("Welch t-tests with Benjamini–Hochberg correction")
     st.dataframe(results, width="stretch", hide_index=True)
-    st.download_button(
-        "Download statistical results",
-        data=results.to_csv(index=False).encode("utf-8"),
-        file_name="statistical_results.csv",
-        mime="text/csv",
-    )
-
-    st.subheader("Mean difference across populations")
-    difference_data = results.copy()
-    difference_data["population_label"] = difference_data["population"].map(
-        POPULATION_LABELS
-    )
-    difference_data = difference_data.sort_values("mean_difference")
-    colors = [
-        "#D17A57" if value >= 0 else "#7A9EAF"
-        for value in difference_data["mean_difference"]
-    ]
-    figure, axis = plt.subplots(figsize=(7, 3.5))
-    axis.barh(
-        difference_data["population_label"],
-        difference_data["mean_difference"],
-        color=colors,
-    )
-    axis.axvline(0, color="#444444", linewidth=1)
-    axis.set_xlabel("Responder mean − non-responder mean (percentage points)")
-    axis.set_ylabel("")
-    axis.set_title("Difference in subject-level mean relative frequency")
-    figure.tight_layout()
-    st.pyplot(figure)
-    plt.close(figure)
 
     with st.expander("Analysis methodology"):
         st.write(
@@ -243,6 +234,34 @@ def render_treatment_response() -> None:
         )
     else:
         st.info("No population is significantly associated with response after FDR correction.")
+
+    st.subheader("Overall difference across all populations")
+    st.caption(
+        "Positive values are higher in responders. Negative values are higher in "
+        "non-responders."
+    )
+    difference_data = results.copy()
+    difference_data["population_label"] = difference_data["population"].map(
+        POPULATION_LABELS
+    )
+    difference_data = difference_data.sort_values("mean_difference")
+    colors = [
+        "#D17A57" if value >= 0 else "#7A9EAF"
+        for value in difference_data["mean_difference"]
+    ]
+
+    figure, axis = plt.subplots(figsize=(12, 3.5))
+    axis.barh(
+        difference_data["population_label"],
+        difference_data["mean_difference"],
+        color=colors,
+    )
+    axis.axvline(0, color="#444444", linewidth=1)
+    axis.set_xlabel("Responder mean − non-responder mean (percentage points)")
+    axis.set_ylabel("")
+    figure.tight_layout()
+    st.pyplot(figure, width="stretch")
+    plt.close(figure)
 
 
 def render_baseline() -> None:
@@ -280,12 +299,6 @@ def render_baseline() -> None:
 
     st.subheader("Matching baseline samples")
     st.dataframe(baseline, width="stretch", hide_index=True)
-    st.download_button(
-        "Download baseline records",
-        data=baseline.to_csv(index=False).encode("utf-8"),
-        file_name="baseline_samples.csv",
-        mime="text/csv",
-    )
 
 
 def main() -> None:
