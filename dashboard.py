@@ -133,9 +133,7 @@ def render_overview() -> None:
         with container:
             filtered = multiselect_filter(filtered, column, label, f"overview_{column}")
 
-    summary_column, download_column = st.columns([4, 1])
-    with summary_column:
-        st.caption(f"Showing {len(filtered):,} cell measurements")
+    download_column, summary_column = st.columns([1, 4])
     with download_column:
         st.download_button(
             "Download filtered data",
@@ -144,6 +142,8 @@ def render_overview() -> None:
             mime="text/csv",
             width="stretch",
         )
+    with summary_column:
+        st.caption(f"Showing {len(filtered):,} cell measurements")
 
     st.dataframe(filtered, width="stretch", hide_index=True)
 
@@ -151,8 +151,9 @@ def render_overview() -> None:
 def render_treatment_response() -> None:
     """Render the fixed response cohort, plots, and statistical results."""
     st.info(
-        "Cohort: condition = melanoma; treatment = miraclib; sample type = PBMC; "
-        "response = yes or no. Each value is a subject-level mean across available time points."
+        "This comparison includes melanoma patients treated with miraclib who provided "
+        "PBMC samples. Responders are recorded as yes and non-responders as no. Each "
+        "plotted value is a patient's average across the available time points."
     )
     values = load_csv("response_subject_frequencies.csv")
     results = load_csv("statistical_results.csv")
@@ -246,6 +247,10 @@ def render_treatment_response() -> None:
 
 def render_baseline() -> None:
     """Render the required baseline subset summaries and records."""
+    st.write(
+        "Baseline refers to samples collected at day 0, when treatment started. This "
+        "section summarizes melanoma PBMC samples from patients treated with miraclib."
+    )
     baseline = load_csv("baseline_samples.csv")
     project_counts = load_csv("baseline_project_counts.csv")
     response_counts = load_csv("baseline_response_counts.csv")
@@ -256,9 +261,8 @@ def render_baseline() -> None:
     first.metric("Matching baseline samples", f"{len(baseline):,}")
     second.metric("Average B-cell count", f"{final_average:,.2f}")
     st.caption(
-        "The baseline cohort uses melanoma, PBMC, miraclib, and day 0. The B-cell "
-        "metric separately includes responding melanoma males at day 0 across all "
-        "treatments and sample types."
+        "The B-cell metric answers a separate question. It includes responding melanoma "
+        "males at day 0 across all treatments and sample types."
     )
 
     columns = st.columns(3)
@@ -305,7 +309,7 @@ def main() -> None:
         st.stop()
 
     overview_tab, response_tab, baseline_tab = st.tabs(
-        ["Data Overview", "Treatment Response", "Baseline Analysis"]
+        ["Data Overview", "Response Comparison", "Baseline (Day 0)"]
     )
     with overview_tab:
         render_overview()

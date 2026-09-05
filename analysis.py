@@ -281,7 +281,8 @@ def main() -> None:
         "final_b_cell_average.csv": final_average,
     }
     for filename, frame in outputs.items():
-        frame.to_csv(OUTPUT_DIR / filename, index=False, float_format="%.8f")
+        float_format = "%.2f" if filename == "final_b_cell_average.csv" else "%.8f"
+        frame.to_csv(OUTPUT_DIR / filename, index=False, float_format=float_format)
 
     plot_path = OUTPUT_DIR / "response_boxplots.png"
     create_response_boxplots(subject_values, plot_path)

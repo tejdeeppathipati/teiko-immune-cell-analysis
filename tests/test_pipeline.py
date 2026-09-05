@@ -76,9 +76,14 @@ def test_baseline_subset_and_summaries() -> None:
 
 
 def test_final_b_cell_average() -> None:
-    result = pd.read_csv(OUTPUTS / "final_b_cell_average.csv")
+    output_path = OUTPUTS / "final_b_cell_average.csv"
+    result = pd.read_csv(output_path)
     assert result.loc[0, "metric"] == "average_b_cell_count"
     assert result.loc[0, "value"] == pytest.approx(10_206.15, abs=0.01)
+    assert output_path.read_text().splitlines() == [
+        "metric,value",
+        "average_b_cell_count,10206.15",
+    ]
 
 
 def test_cd4_is_only_significant_population() -> None:

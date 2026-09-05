@@ -6,11 +6,9 @@ This project loads clinical immune-cell counts into SQLite, calculates cell-popu
 
 ## Dashboard
 
-**Live dashboard:** Coming soon
+**Live dashboard:** [https://immune-cell-analysis-dashboard.streamlit.app/](https://immune-cell-analysis-dashboard.streamlit.app/)
 
 Run `make dashboard` to open the dashboard locally. The Data Overview tab lets you filter the relative-frequency table and download the results. Treatment Response compares responders and non-responders, shows the statistical analysis, and explains the method. Baseline Analysis contains the requested cohort counts and B-cell result.
-
-The hosted link will be added here after deployment.
 
 ## Run the project
 
