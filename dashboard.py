@@ -91,16 +91,18 @@ def load_csv(filename: str) -> pd.DataFrame:
 def multiselect_filter(
     frame: pd.DataFrame, column: str, label: str, key: str
 ) -> pd.DataFrame:
-    """Render an all-selected multiselect and apply it to a data frame."""
+    """Apply selected values, treating an empty selection as all values."""
     choices = sorted(frame[column].dropna().unique().tolist())
-    selected = st.multiselect(label, choices, default=choices, key=key)
+    selected = st.multiselect(label, choices, placeholder="All", key=key)
+    if not selected:
+        return frame
     return frame[frame[column].isin(selected)]
 
 
 def reset_overview_filters() -> None:
-    """Return every overview filter to its default all-values selection."""
+    """Clear every overview filter so all values are included."""
     for key in OVERVIEW_FILTER_KEYS:
-        st.session_state.pop(key, None)
+        st.session_state[key] = []
 
 
 def render_overview() -> None:
